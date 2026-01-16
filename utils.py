@@ -9,7 +9,7 @@ import requests
 import pandas as pd
 from requests_cache import CachedSession
 
-API_SERVER = getenv("API_SERVER", "https://api.snowdata.info")
+API_SERVER = getenv("API_SERVER", "https://wcc.sc.egov.usda.gov/awdbRestApi")
 NULL_OPTION = {"label": "", "value": None}
 THIS_DIR = path.dirname(path.realpath(__file__))
 DB_DIR = path.join(THIS_DIR, "dbs")
@@ -31,40 +31,75 @@ def add_null_option(options=None):
    
 def get_singlestation_data(stationtriplet, element, s_date, e_date, orient, sesh=None):
 
-
     def get_data(stationtriplet, element, s_date, e_date, orient, server=API_SERVER):
-         
-        endpoint = "/data/getDaily"
-        date_args = f"s_date={s_date}&e_date={e_date}"
-        frmt_args = f"format=json&orient={orient}"
-        all_args = f"?triplet={stationtriplet}&{date_args}&element={element}&{frmt_args}"
-        url = f"{server}{endpoint}{all_args}"
-        print(f"getting data for {url}")
+        """
+        Fetch data from the AWDB REST API v1
+        New API format: /services/v1/data
+        Parameters: stationTriplets, elements, duration, beginDate, endDate
+        """
+        endpoint = "/services/v1/data"
+        
+        # Build query parameters
+        params = {
+            "stationTriplets": stationtriplet,
+            "elements": element,
+            "duration": "DAILY",
+            "beginDate": s_date,
+            "endDate": e_date
+        }
+        
+        url = f"{server}{endpoint}"
+        print(f"getting data for {url}?{requests.compat.urlencode(params)}")
+        
         if sesh:
-            req = sesh.get(url)
+            req = sesh.get(url, params=params)
         else:
-            req = requests.get(url)
+            req = requests.get(url, params=params)
+            
         if req.ok:
-            df = pd.DataFrame.from_dict(req.json())
-            df.columns = ["Date", f"{stationtriplet}" + "(" + f"{element}" + ")"]
-            df.set_index("Date", inplace=True)    
+            response_data = req.json()
+            
+            # The new API returns data in a different structure:
+            # [{"stationTriplet": "...", "data": [{"stationElement": {...}, "values": [...]}]}]
+            
+            if response_data and len(response_data) > 0:
+                station_data = response_data[0]
+                
+                if "data" in station_data and len(station_data["data"]) > 0:
+                    element_data = station_data["data"][0]
+                    values = element_data.get("values", [])
+                    
+                    # Extract dates and values
+                    dates = [v["date"] for v in values if "date" in v]
+                    vals = [v.get("value") for v in values]
+                    
+                    df = pd.DataFrame({
+                        "Date": dates,
+                        f"{stationtriplet}({element})": vals
+                    })
+                    df.set_index("Date", inplace=True)
+                    return df
+                    
+        # Return empty dataframe if no data
+        return pd.DataFrame()
 
-        return df
-
-    #Create derived products here:
+    # Create derived products here:
     if element == "WTEQ - Accumulative":
-        element='WTEQ'
+        element = 'WTEQ'
         df = get_data(stationtriplet, element, s_date, e_date, orient)
         
-        #Categorize measurements by water year.
+        if df.empty:
+            return df
+            
+        # Categorize measurements by water year.
         df.reset_index(inplace=True)  
         pd.to_datetime(df['Date'])
         df['water_year'] = pd.to_datetime(df['Date']).dt.year.where(pd.to_datetime(df['Date']).dt.month < 10, pd.to_datetime(df['Date']).dt.year + 1)
         df['water_year'] = list(map(lambda x: str(x), df['water_year']))
         df.set_index('Date', inplace=True)
-        #Take the difference of WTEQ measurements and change all neg delta to 0.
+        # Take the difference of WTEQ measurements and change all neg delta to 0.
         df[f'{stationtriplet}(WTEQ - Accumulative)'] = df[f'{stationtriplet}(WTEQ)'].diff().clip(lower=0)
-        #Groupby water year and then take the cumulative sum of the WTEQ measurements.
+        # Groupby water year and then take the cumulative sum of the WTEQ measurements.
         df = pd.DataFrame(df.groupby(['water_year'])[f'{stationtriplet}(WTEQ - Accumulative)'].cumsum())
     
     else:

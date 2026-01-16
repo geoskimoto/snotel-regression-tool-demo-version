@@ -166,15 +166,23 @@ def nearest_sites(df_meta, resp_site=None, pred_sites=None, num_sites=10):
         num_sites = int(num_sites)
     except ValueError:
         num_sites = 10
+    
     tx = df_meta[df_meta["triplet"] == resp_site]["latitude"]
     ty = df_meta[df_meta["triplet"] == resp_site]["longitude"]
+    
+    # Check if we have a valid response site with coordinates
+    if tx.empty or ty.empty:
+        # No response site selected, return first num_sites stations
+        df_nearest = df_meta.head(num_sites).copy()
+    else:
+        def calc_dist(row, tx=tx.iloc[0], ty=ty.iloc[0]):
+            return (row["latitude"] - tx) ** 2 + (row["longitude"] - ty) ** 2
 
-    def calc_dist(row, tx=tx, ty=ty):
-        return (row["latitude"] - tx) ** 2 + (row["longitude"] - ty) ** 2
-
-    df_meta["proximity"] = df_meta.apply(calc_dist, axis=1)
-    df_meta.sort_values(by="proximity", inplace=True)
-    df_nearest = df_meta.head(num_sites + 1).copy()
+        df_meta = df_meta.copy()
+        df_meta["proximity"] = df_meta.apply(calc_dist, axis=1)
+        df_meta.sort_values(by="proximity", inplace=True)
+        df_nearest = df_meta.head(num_sites + 1).copy()
+    
     triplets_in_use = tuple(set([i for i in (resp_site,) + pred_sites if i]))
     df_in_use = df_meta[df_meta["triplet"].isin(triplets_in_use)]
     df = pd.concat([df_nearest, df_in_use]).drop_duplicates(ignore_index=True)
@@ -207,27 +215,51 @@ def nearest_sites(df_meta, resp_site=None, pred_sites=None, num_sites=10):
 def populate_dropdowns(filter_by, url_args, num_sites, sortby, resp_site, *pred_sites):
     args = parse_url_args(url_args)
     num_sites = args.get("num_sites", num_sites)
-    df_meta = pd.read_sql("meta", dbs.db.get_engine())
+    df_meta = pd.read_sql("SELECT * FROM meta", dbs.db.engine)
     df_nearest = nearest_sites(df_meta, resp_site, pred_sites, num_sites=num_sites)
-    site_map = get_station_map(df_nearest, resp=resp_site, preds=pred_sites)
+    
+    # Show all stations on the map, not just nearest
+    site_map = get_station_map(df_meta, resp=resp_site, preds=pred_sites)
 
+    # Handle proximity sorting specially since it needs to be calculated
+    if sortby == 'proximity' and resp_site:
+        df_meta_sorted = df_meta.copy()
+        tx = df_meta[df_meta["triplet"] == resp_site]["latitude"]
+        ty = df_meta[df_meta["triplet"] == resp_site]["longitude"]
+        if not tx.empty and not ty.empty:
+            def calc_dist(row, tx=tx.iloc[0], ty=ty.iloc[0]):
+                return (row["latitude"] - tx) ** 2 + (row["longitude"] - ty) ** 2
+            df_meta_sorted["proximity"] = df_meta_sorted.apply(calc_dist, axis=1)
+            df_meta_sorted = df_meta_sorted.sort_values(by="proximity")
+        else:
+            df_meta_sorted = df_meta.sort_values(by="label")
+    else:
+        df_meta_sorted = df_meta.sort_values(by=sortby)
+    
     all_stations = add_null_option()
-    for i, row in df_meta.sort_values(by=sortby).iterrows():
+    for i, row in df_meta_sorted.iterrows():
         all_stations.append({"label": row["label"], "value": row["triplet"]})
 
-    nearest_stations = [
-        i for i in all_stations if i["value"] in df_nearest["triplet"].tolist()
-    ]
+    # Predictor stations should also show all stations, not just nearest
+    nearest_stations = all_stations
     preds_begin_dates = df_meta[df_meta["triplet"].isin(pred_sites)][
         "beginDate"
     ].tolist()
     if preds_begin_dates:
-        max_begin_date = max(
-            [dt.strptime(i, "%Y-%m-%d 00:00:00") for i in preds_begin_dates]
-        )
+        # Handle both old format (YYYY-MM-DD HH:mm:ss) and new format (YYYY-MM-DD HH:mm)
+        parsed_dates = []
+        for date_str in preds_begin_dates:
+            try:
+                parsed_dates.append(dt.strptime(date_str, "%Y-%m-%d %H:%M:%S"))
+            except ValueError:
+                try:
+                    parsed_dates.append(dt.strptime(date_str, "%Y-%m-%d %H:%M"))
+                except ValueError:
+                    # Fallback: try just the date part
+                    parsed_dates.append(dt.strptime(date_str.split()[0], "%Y-%m-%d"))
+        max_begin_date = max(parsed_dates)
     else:
         max_begin_date = get_initial_begin_date()
-    nearest_stations = add_null_option(nearest_stations)
     return (
         all_stations,
         nearest_stations,
@@ -452,7 +484,7 @@ def train_pred_figures(
 def datatable(n_clicks):
 
     df = pd.read_sql_query(
-        "SELECT * from regression_models", con=dbs.db.get_engine(bind="regr_models")
+        "SELECT * from regression_models", con=dbs.db.engines["regr_models"]
     )
     return [
         dash_table.DataTable(
@@ -600,7 +632,7 @@ def update_database(n_clicks, datatable):
     df_datatable = pd.dataFrame(datatable)
     print(df_datatable.iloc[0,0])
     #retrieve the unchanged table from the db:   
-    con=dbs.db.get_engine(bind="regr_models")
+    con=dbs.db.engines["regr_models"]
     
     # df_db = pd.read_sql_query(
     #     "SELECT * from regression_models", con=dbs.db.get_engine(bind="regr_models")

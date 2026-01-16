@@ -82,8 +82,9 @@ class Regression_Models(db.Model):
 # if os.path.isfile('./regr_models.db'):
 #     pass
 # else:
-db.create_all()
-db.session.commit()
+with app.server.app_context():
+    db.create_all()
+    db.session.commit()
 
 
         
