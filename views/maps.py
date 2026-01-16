@@ -37,7 +37,8 @@ def get_station_map(df_meta, resp=None, preds=None):
                 mode="markers",
                 marker=dict(
                     color=df_others["elevation"],
-                    size=15,
+                    size=12,
+                    symbol="circle",
                     colorscale=colorscale,
                     colorbar=dict(
                         thickness=20,
@@ -57,11 +58,12 @@ def get_station_map(df_meta, resp=None, preds=None):
                 mode="markers",
                 marker=dict(
                     color=df_preds["elevation"],
-                    size=23,
+                    size=18,
+                    symbol="circle",
                     colorscale=colorscale,
                     coloraxis="coloraxis",
                     showscale=False,
-                    opacity=0.9,
+                    opacity=0.95,
                 ),
             ),
             go.Scattermapbox(
@@ -72,10 +74,12 @@ def get_station_map(df_meta, resp=None, preds=None):
                 mode="markers",
                 marker=dict(
                     color=df_resp["elevation"],
-                    size=30,
+                    size=24,
+                    symbol="square",
                     colorscale=colorscale,
                     coloraxis="coloraxis",
                     showscale=False,
+                    opacity=1.0,
                 ),
             ),
         ],
@@ -118,7 +122,8 @@ def get_station_map(df_meta, resp=None, preds=None):
             mapbox_center=dict(
                 lon=selected_site_meta["longitude"].values[0],
                 lat=selected_site_meta["latitude"].values[0],
-            )
+            ),
+            mapbox_zoom=7  # County/regional level zoom
         )
 
     site_map = dcc.Graph(

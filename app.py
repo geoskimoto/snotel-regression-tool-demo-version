@@ -222,17 +222,21 @@ def populate_dropdowns(filter_by, url_args, num_sites, sortby, resp_site, *pred_
     site_map = get_station_map(df_meta, resp=resp_site, preds=pred_sites)
 
     # Handle proximity sorting specially since it needs to be calculated
-    if sortby == 'proximity' and resp_site:
-        df_meta_sorted = df_meta.copy()
-        tx = df_meta[df_meta["triplet"] == resp_site]["latitude"]
-        ty = df_meta[df_meta["triplet"] == resp_site]["longitude"]
-        if not tx.empty and not ty.empty:
-            def calc_dist(row, tx=tx.iloc[0], ty=ty.iloc[0]):
-                return (row["latitude"] - tx) ** 2 + (row["longitude"] - ty) ** 2
-            df_meta_sorted["proximity"] = df_meta_sorted.apply(calc_dist, axis=1)
-            df_meta_sorted = df_meta_sorted.sort_values(by="proximity")
+    if sortby == 'proximity':
+        if resp_site:
+            df_meta_sorted = df_meta.copy()
+            tx = df_meta[df_meta["triplet"] == resp_site]["latitude"]
+            ty = df_meta[df_meta["triplet"] == resp_site]["longitude"]
+            if not tx.empty and not ty.empty:
+                def calc_dist(row, tx=tx.iloc[0], ty=ty.iloc[0]):
+                    return (row["latitude"] - tx) ** 2 + (row["longitude"] - ty) ** 2
+                df_meta_sorted["proximity"] = df_meta_sorted.apply(calc_dist, axis=1)
+                df_meta_sorted = df_meta_sorted.sort_values(by="proximity")
+            else:
+                df_meta_sorted = df_meta.sort_values(by="name")
         else:
-            df_meta_sorted = df_meta.sort_values(by="label")
+            # No response station selected yet, default to alphabetical
+            df_meta_sorted = df_meta.sort_values(by="name")
     else:
         df_meta_sorted = df_meta.sort_values(by=sortby)
     
