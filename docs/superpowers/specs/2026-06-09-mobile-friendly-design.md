@@ -24,10 +24,10 @@ Use `dbc.Offcanvas` as the single container for controls, with `assets/mobile.cs
 
 ### Changes to `app.py`
 - Remove `dbc.Col(get_control_view(), width=3)` desktop sidebar
-- Add `dbc.Offcanvas(get_control_view(), id="controls-offcanvas", ...)` rendered once
+- Add `dbc.Offcanvas(get_control_view(), id="controls-offcanvas", ...)` **inside `dbc.Row`** as a sibling to the main content col — this is required so the desktop CSS (position: relative, width: 25%) participates in the row's flexbox and pushes content
 - Add a mobile-only trigger button (`d-md-none`) above the tabs row
 - Add callback to toggle `is_open` on `controls-offcanvas`
-- The main content column becomes full-width on mobile (`xs=12, md=9`)
+- The main content column uses `xs=12, md=9`: full-width on mobile (offcanvas is position:fixed, out of flow), 9-cols on desktop (offcanvas sidebar takes the remaining 25%)
 
 ### Changes to `views/controls.py`
 No structural changes — `get_control_view()` is unchanged except for the date picker replacements (Section 2).
