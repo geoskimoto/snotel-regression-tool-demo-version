@@ -40,8 +40,7 @@ MODEL_OPTIONS = [
 
 
 def get_control_view(newest_begin_date=get_initial_begin_date()):
-    return (
-        dbc.Card(
+    return dbc.Card(
             id="input-card",
             className="p-1",
             children=[
@@ -157,18 +156,22 @@ def get_control_view(newest_begin_date=get_initial_begin_date()):
                                     "Date range to train model on:",
                                     html_for="train-model-date-grp",
                                 ),
-                                dbc.InputGroup(
+                                html.Div(
                                     id="train-model-date-grp",
                                     children=[
-                                        dcc.DatePickerSingle(
+                                        dbc.Label("Start:", html_for="startdate_picker"),
+                                        dbc.Input(
                                             id="startdate_picker",
-                                            min_date_allowed=date(1950, 10, 1),
-                                            date=newest_begin_date,
+                                            type="date",
+                                            min="1950-10-01",
+                                            value=str(newest_begin_date),
                                         ),
-                                        dcc.DatePickerSingle(
+                                        dbc.Label("End:", html_for="enddate_picker"),
+                                        dbc.Input(
                                             id="enddate_picker",
-                                            min_date_allowed=date(1950, 10, 1),
-                                            date=date.today() - relativedelta(days=15),
+                                            type="date",
+                                            min="1950-10-01",
+                                            value=str(date.today() - relativedelta(days=15)),
                                         ),
                                     ],
                                 ),
@@ -203,16 +206,20 @@ def get_control_view(newest_begin_date=get_initial_begin_date()):
                                     "Run well trained model:",
                                     html_for="run-model-date-grp",
                                 ),
-                                dbc.InputGroup(
+                                html.Div(
                                     id="run-model-date-grp",
                                     children=[
-                                        dcc.DatePickerSingle(
+                                        dbc.Label("Start:", html_for="predict_startdate_picker"),
+                                        dbc.Input(
                                             id="predict_startdate_picker",
-                                            date=date.today() - relativedelta(months=1),
+                                            type="date",
+                                            value=str(date.today() - relativedelta(months=1)),
                                         ),
-                                        dcc.DatePickerSingle(
+                                        dbc.Label("End:", html_for="predict_enddate_picker"),
+                                        dbc.Input(
                                             id="predict_enddate_picker",
-                                            date=date.today(),
+                                            type="date",
+                                            value=str(date.today()),
                                         ),
                                     ],
                                 ),
@@ -236,8 +243,7 @@ def get_control_view(newest_begin_date=get_initial_begin_date()):
                     ],
                 )
             ],
-        ),
-    )
+        )
 
 
 if __name__ == "__main__":
