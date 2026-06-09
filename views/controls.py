@@ -213,12 +213,14 @@ def get_control_view(newest_begin_date=get_initial_begin_date()):
                                         dbc.Input(
                                             id="predict_startdate_picker",
                                             type="date",
+                                            min="1950-10-01",
                                             value=str(date.today() - relativedelta(months=1)),
                                         ),
                                         dbc.Label("End:", html_for="predict_enddate_picker"),
                                         dbc.Input(
                                             id="predict_enddate_picker",
                                             type="date",
+                                            min="1950-10-01",
                                             value=str(date.today()),
                                         ),
                                     ],

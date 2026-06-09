@@ -1,5 +1,7 @@
 import sys
-sys.path.insert(0, '/home/snotel/htdocs/app')
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent))
 
 import dash_bootstrap_components as dbc
 from views.controls import get_control_view
@@ -32,7 +34,7 @@ def find_all_by_id(node, target_id, results=None):
     return results
 
 
-APP_PY = '/home/snotel/htdocs/app/app.py'
+APP_PY = str(Path(__file__).parent / 'app.py')
 
 
 def test_date_pickers_are_native_inputs():
