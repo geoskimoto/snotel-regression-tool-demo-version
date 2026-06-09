@@ -198,7 +198,7 @@ def nearest_sites(df_meta, resp_site=None, pred_sites=None, num_sites=10):
         Output("predictor-station4", "options"),
         Output("station-selector", "value"),
         Output("station-map", "children"),
-        Output("startdate_picker", "date"),
+        Output("startdate_picker", "value"),
     ],
     [
         Input("station-selector", "value"),
@@ -272,7 +272,7 @@ def populate_dropdowns(filter_by, url_args, num_sites, sortby, resp_site, *pred_
         nearest_stations,
         num_sites,
         site_map,
-        max_begin_date,
+        max_begin_date.strftime("%Y-%m-%d"),
     )
 
 
@@ -290,11 +290,11 @@ def populate_dropdowns(filter_by, url_args, num_sites, sortby, resp_site, *pred_
         State("predictor-parameter3", "value"),
         State("predictor-station4", "value"),
         State("predictor-parameter4", "value"),
-        State("startdate_picker", "date"),
-        State("enddate_picker", "date"),
+        State("startdate_picker", "value"),
+        State("enddate_picker", "value"),
         State("model_selection", "value"),
-        State("predict_startdate_picker", "date"),
-        State("predict_enddate_picker", "date"),
+        State("predict_startdate_picker", "value"),
+        State("predict_enddate_picker", "value"),
     ],
 )
 def train_test_figures(
@@ -376,11 +376,11 @@ def train_test_figures(
         State("predictor-parameter3", "value"),
         State("predictor-station4", "value"),
         State("predictor-parameter4", "value"),
-        State("startdate_picker", "date"),
-        State("enddate_picker", "date"),
+        State("startdate_picker", "value"),
+        State("enddate_picker", "value"),
         State("model_selection", "value"),
-        State("predict_startdate_picker", "date"),
-        State("predict_enddate_picker", "date"),
+        State("predict_startdate_picker", "value"),
+        State("predict_enddate_picker", "value"),
     ],
     prevent_initial_call=True,
 )
@@ -542,8 +542,8 @@ def datatable(n_clicks):
         State("predictor-parameter3", "value"),
         State("predictor-station4", "value"),
         State("predictor-parameter4", "value"),
-        State("startdate_picker", "date"),
-        State("enddate_picker", "date"),
+        State("startdate_picker", "value"),
+        State("enddate_picker", "value"),
         State("model_selection", "value"),
         # State("save_message", "is_open")
     ],

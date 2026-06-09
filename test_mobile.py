@@ -49,3 +49,17 @@ def test_date_pickers_are_native_inputs():
         assert component.type == 'date', (
             f"{picker_id} should have type='date', got '{component.type}'"
         )
+
+
+def test_date_picker_callbacks_use_value_not_date():
+    """Check app.py source directly — no fragile callback_map introspection."""
+    with open(APP_PY) as f:
+        content = f.read()
+    for picker_id in ('startdate_picker', 'enddate_picker',
+                      'predict_startdate_picker', 'predict_enddate_picker'):
+        old_ref_double = f'"{picker_id}", "date"'
+        old_ref_single = f"'{picker_id}', 'date'"
+        assert old_ref_double not in content and old_ref_single not in content, (
+            f"Found old .date property reference for {picker_id} in app.py — "
+            f"should be .value"
+        )
