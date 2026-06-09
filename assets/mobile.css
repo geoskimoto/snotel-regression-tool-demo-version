@@ -1,0 +1,24 @@
+/* Desktop (md+): make offcanvas appear as a static inline sidebar */
+@media (min-width: 768px) {
+    #controls-offcanvas {
+        position: relative !important;
+        transform: none !important;
+        visibility: visible !important;
+        display: block !important;
+        width: 25% !important;
+        height: auto !important;
+        border: none !important;
+        background: transparent !important;
+        z-index: auto !important;
+    }
+    #controls-offcanvas .offcanvas-header {
+        display: none !important;
+    }
+}
+
+/* Mobile: prevent Plotly graphs from overflowing viewport */
+@media (max-width: 767px) {
+    .js-plotly-plot, .plotly {
+        max-width: 100vw !important;
+    }
+}
