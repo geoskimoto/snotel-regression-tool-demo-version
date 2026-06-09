@@ -63,3 +63,24 @@ def test_date_picker_callbacks_use_value_not_date():
             f"Found old .date property reference for {picker_id} in app.py — "
             f"should be .value"
         )
+
+
+def test_layout_has_offcanvas():
+    import app as app_module
+    layout = app_module.app.layout
+    offcanvas = find_by_id(layout, 'controls-offcanvas')
+    assert offcanvas is not None, "controls-offcanvas not found in layout"
+
+
+def test_layout_has_mobile_trigger_button():
+    import app as app_module
+    layout = app_module.app.layout
+    btn = find_by_id(layout, 'controls-offcanvas-toggle')
+    assert btn is not None, "controls-offcanvas-toggle button not found in layout"
+
+
+def test_controls_rendered_exactly_once():
+    import app as app_module
+    layout = app_module.app.layout
+    cards = find_all_by_id(layout, 'input-card')
+    assert len(cards) == 1, f"input-card should appear exactly once, found {len(cards)}"

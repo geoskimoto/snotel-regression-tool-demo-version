@@ -39,7 +39,27 @@ app.layout = dbc.Container(
         ),
         dbc.Row(
             [
-                dbc.Col(get_control_view(), width=3),
+                dbc.Button(
+                    "Controls",
+                    id="controls-offcanvas-toggle",
+                    color="secondary",
+                    size="sm",
+                    className="d-md-none mb-1",
+                    n_clicks=0,
+                ),
+            ],
+            className="my-1",
+        ),
+        dbc.Row(
+            [
+                dbc.Offcanvas(
+                    get_control_view(),
+                    id="controls-offcanvas",
+                    title="Controls",
+                    is_open=False,
+                    placement="start",
+                    backdrop=True,
+                ),
                 dbc.Col(
                     children=[
                         dbc.Tabs(
@@ -88,34 +108,19 @@ app.layout = dbc.Container(
                                                                 id="view-datatable-button",
                                                                 children="View Database",
                                                                 color="secondary",
-                                                                # className="",
                                                             ),
                                                             dbc.Button(
                                                                 id="save-to-db-button",
                                                                 children="Save Model to DB",
                                                                 color="secondary",
-                                                                # className="",
                                                             ),
                                                             dbc.Button(
                                                                 id='update-db-button',
                                                                 children="Save changes to DB",
                                                                 color="secondary",
-                                                                # className="",
                                                             ),
-                                                            # dbc.Modal(
-                                                            #     [
-                                                            #         dbc.ModalHeader(dbc.ModalTitle("Header")),
-                                                            #         dbc.ModalBody(id='save-message', children=[]),
-                                                            #         dbc.ModalFooter(
-                                                            #             dbc.Button(
-                                                            #                 "Close", id="close", className="ms-auto", n_clicks=0
-                                                            #             )
-                                                            #         ),
-                                                            #     ],
-                                                            # id="modal",
-                                                            # is_open=False,
-                                                            # ),
-                                                        ]
+                                                        ],
+                                                        className="flex-column flex-sm-row w-100",
                                                     ),
                                                     html.Div(
                                                         id="save-message", children=[]
@@ -123,15 +128,9 @@ app.layout = dbc.Container(
                                                     html.Div(
                                                         id="update-message", children=[]
                                                     ),
-                                                    # dcc.Interval(id='interval_pg', interval=86400000*7, n_intervals=0),  # activated once/week or when page refreshed
                                                     html.Div(
                                                         id="view-datatable", children=[]
-                                                    )
-                                                    # html.Div(id='Save-df-to-db',
-                                                    #         children = [
-                                                    #             dbc.Button(id='Save-df-to-db-button'),
-                                                    #             ]
-                                                    #         ),
+                                                    ),
                                                 ]
                                             ),
                                         ),
@@ -140,6 +139,8 @@ app.layout = dbc.Container(
                             ],
                         ),
                     ],
+                    xs=12,
+                    md=9,
                 ),
             ],
             className="my-2",
