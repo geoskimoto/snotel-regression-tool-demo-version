@@ -278,6 +278,16 @@ def populate_dropdowns(filter_by, url_args, num_sites, sortby, resp_site, *pred_
 
 
 @app.callback(
+    Output("controls-offcanvas", "is_open"),
+    Input("controls-offcanvas-toggle", "n_clicks"),
+    State("controls-offcanvas", "is_open"),
+    prevent_initial_call=True,
+)
+def toggle_controls_offcanvas(n_clicks, is_open):
+    return not is_open
+
+
+@app.callback(
     [Output("traintest-plots", "children"), Output("modelfit-plots", "children")],
     Input("submit-button-training", "n_clicks"),
     [

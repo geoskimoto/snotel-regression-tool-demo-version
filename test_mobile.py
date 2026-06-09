@@ -84,3 +84,14 @@ def test_controls_rendered_exactly_once():
     layout = app_module.app.layout
     cards = find_all_by_id(layout, 'input-card')
     assert len(cards) == 1, f"input-card should appear exactly once, found {len(cards)}"
+
+
+def test_offcanvas_toggle_callback_registered():
+    # In Dash 2.x, callback_map keys are stringified output specs like
+    # "controls-offcanvas.is_open" or "..controls-offcanvas.is_open.."
+    import app as app_module
+    found = any(
+        'controls-offcanvas' in key and 'is_open' in key
+        for key in app_module.app.callback_map
+    )
+    assert found, "No callback registered with controls-offcanvas.is_open as output"
