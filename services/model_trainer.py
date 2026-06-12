@@ -82,8 +82,12 @@ class AutoModelTrainer:
             return
 
         today = date.today()
-        train_end = (today - timedelta(days=1)).isoformat()
-        train_start = (today - relativedelta(years=10)).isoformat()
+        if today.month >= 10:
+            wy_end_year = today.year
+        else:
+            wy_end_year = today.year - 1
+        train_start = date(wy_end_year - 1, 10, 1).isoformat()
+        train_end = date(wy_end_year, 9, 30).isoformat()
         wy = _water_year(today)
 
         trained = []
