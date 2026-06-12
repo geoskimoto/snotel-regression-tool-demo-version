@@ -19,6 +19,13 @@ import views.regression as RegressionTool
 app = dbs.app
 server = app.server
 
+from api.v1.estimates import estimates_bp
+from services.db import create_tables as _create_auto_tables
+
+if "estimates_v1" not in server.blueprints:
+    server.register_blueprint(estimates_bp)
+_create_auto_tables()
+
 
 app.layout = dbc.Container(
     [
