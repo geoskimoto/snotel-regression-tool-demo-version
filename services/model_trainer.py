@@ -88,18 +88,24 @@ class AutoModelTrainer:
         trained = []
         for cset in candidates:
             pairs = [(triplet, parameter)] + cset
+            model = RegressionFun(pairs, train_start, train_end)
             try:
-                model = RegressionFun(pairs, train_start, train_end)
                 model.train_model("Lasso", 0.3)
-                trained.append({
-                    "stationparameters": str(pairs),
-                    "regressor_type": "Lasso",
-                    "RMSE_train": float(model.RMSE_train),
-                    "RMSE_test": float(model.RMSE_test),
-                    "model_blob": pickle.dumps(model.regr),
-                })
             except Exception as e:
-                logger.warning(f"Training failed for candidate {cset}: {e}", exc_info=True)
+                # RegressionFun.train_model() includes visualization that can fail
+                # for certain feature counts. If training itself succeeded, regr and
+                # RMSE attributes are set before the visualization step.
+                if model.regr is None or model.RMSE_train is None:
+                    logger.warning(f"Training failed for candidate {cset}: {e}", exc_info=True)
+                    continue
+                logger.warning(f"Visualization error (non-fatal) for {cset}: {e}")
+            trained.append({
+                "stationparameters": str(pairs),
+                "regressor_type": "Lasso",
+                "RMSE_train": float(model.RMSE_train),
+                "RMSE_test": float(model.RMSE_test),
+                "model_blob": pickle.dumps(model.regr),
+            })
 
         if not trained:
             logger.warning(f"All candidate sets failed for outage {outage_id}")
