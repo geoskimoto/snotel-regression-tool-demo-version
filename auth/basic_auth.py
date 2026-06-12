@@ -24,7 +24,7 @@ class BasicAuth(Auth):
     def login_request(self):
         return flask.Response(
             "Login Required",
-            headers={"WWW-Authenticate": 'Basic realm="User Visible Realm"'},
+            headers={"WWW-Authenticate": 'Basic realm="SNOTEL Regression Tool"'},
             status=401,
         )
 

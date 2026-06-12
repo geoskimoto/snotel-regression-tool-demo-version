@@ -39,26 +39,11 @@ app.layout = dbc.Container(
         ),
         dbc.Row(
             [
-                dbc.Button(
-                    "Controls",
-                    id="controls-offcanvas-toggle",
-                    color="secondary",
-                    size="sm",
-                    className="d-md-none mb-1",
-                    n_clicks=0,
-                ),
-            ],
-            className="my-1",
-        ),
-        dbc.Row(
-            [
-                dbc.Offcanvas(
+                dbc.Col(
                     get_control_view(),
-                    id="controls-offcanvas",
-                    title="Controls",
-                    is_open=False,
-                    placement="start",
-                    backdrop=True,
+                    xs=12,
+                    md=3,
+                    className="mb-2",
                 ),
                 dbc.Col(
                     children=[
@@ -276,15 +261,6 @@ def populate_dropdowns(filter_by, url_args, num_sites, sortby, resp_site, *pred_
         max_begin_date.strftime("%Y-%m-%d"),
     )
 
-
-@app.callback(
-    Output("controls-offcanvas", "is_open"),
-    Input("controls-offcanvas-toggle", "n_clicks"),
-    State("controls-offcanvas", "is_open"),
-    prevent_initial_call=True,
-)
-def toggle_controls_offcanvas(n_clicks, is_open):
-    return not is_open
 
 
 @app.callback(
