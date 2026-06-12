@@ -1,0 +1,10 @@
+[Unit]
+Description=SNOTEL Auto-Estimation Daily Job Timer
+Requires=snotel-daily-job.service
+
+[Timer]
+OnCalendar=*-*-* 15:30:00 UTC
+Persistent=true
+
+[Install]
+WantedBy=timers.target

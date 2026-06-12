@@ -1,0 +1,13 @@
+[Unit]
+Description=SNOTEL Auto-Estimation Daily Job
+After=network.target
+
+[Service]
+Type=oneshot
+User=snotel
+Group=snotel
+WorkingDirectory=/home/snotel/htdocs/app
+Environment=PYTHONPATH=/home/snotel/htdocs/app
+ExecStart=/home/snotel/htdocs/app/.venv/bin/python services/daily_job.py
+StandardOutput=journal
+StandardError=journal
