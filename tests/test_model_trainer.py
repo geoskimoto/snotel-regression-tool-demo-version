@@ -89,6 +89,7 @@ def test_build_predictor_candidates_max_three_sets(trainer):
     assert len(candidates) <= 3
 
 
+@pytest.mark.integration
 def test_train_for_outage_stores_ranked_models(db_path):
     """Integration: actually trains models against AWDB. Requires network."""
     pytest.importorskip("sklearn")
@@ -122,6 +123,7 @@ def test_train_for_outage_stores_ranked_models(db_path):
     assert hasattr(m, "predict")
 
 
+@pytest.mark.integration
 def test_train_for_outage_stationparameters_format(db_path):
     """stationparameters must be parseable as a list of tuples."""
     meta = _make_meta_df()

@@ -1,5 +1,4 @@
 # services/model_trainer.py
-import ast
 import logging
 import pickle
 from datetime import date, timedelta
@@ -38,24 +37,17 @@ class AutoModelTrainer:
         return others.nsmallest(n, "_dist")["triplet"].tolist()
 
     def build_predictor_candidates(self, triplet, parameter, online_status):
-        """
-        Build up to 3 predictor candidate sets from the prioritized pool.
-        Returns list of lists of (triplet, param) tuples.
-        online_status value of None means the sensor is healthy/online.
-        """
+        """Return up to 3 predictor candidate sets, prioritized by sensor availability."""
         correlates = CORRELATED_PARAMS.get(parameter, [])
         nearby = self._get_nearby_triplets(triplet, n=5)
 
         pool = []
-        # Priority 1: same-station correlated sensors that are online
         for p in correlates:
             if online_status.get(triplet, {}).get(p) is None:
                 pool.append((triplet, p))
-        # Priority 2: nearest stations, same parameter, online
         for t in nearby:
             if online_status.get(t, {}).get(parameter) is None:
                 pool.append((t, parameter))
-        # Priority 3: nearest stations, correlated params, online
         for t in nearby:
             for p in correlates:
                 cand = (t, p)
@@ -75,7 +67,10 @@ class AutoModelTrainer:
         return candidates
 
     def train_for_outage(self, outage_id, triplet, parameter, online_status):
-        """Train up to 3 ranked models for one outage. Stores results to auto_models."""
+        """Train up to 3 ranked Lasso models for one outage, stored to auto_models."""
+        if parameter not in CORRELATED_PARAMS:
+            logger.warning(f"Unsupported parameter {parameter} — no correlated params defined")
+            return
         candidates = self.build_predictor_candidates(triplet, parameter, online_status)
         if not candidates:
             logger.warning(f"No predictor candidates available for {triplet}/{parameter}")
@@ -104,7 +99,7 @@ class AutoModelTrainer:
                     "model_blob": pickle.dumps(model.regr),
                 })
             except Exception as e:
-                logger.warning(f"Training failed for candidate {cset}: {e}")
+                logger.warning(f"Training failed for candidate {cset}: {e}", exc_info=True)
 
         if not trained:
             logger.warning(f"All candidate sets failed for outage {outage_id}")
