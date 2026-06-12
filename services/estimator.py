@@ -1,4 +1,3 @@
-# services/estimator.py
 import ast
 import logging
 import pickle
@@ -29,7 +28,7 @@ class Estimator:
             pairs = ast.literal_eval(am["stationparameters"])
             predictor_pairs = pairs[1:]  # pairs[0] is the response (outage station)
             all_online = all(
-                online_status.get(t, {}).get(p) is None
+                online_status.get(t, {}).get(p, "missing") is None
                 for t, p in predictor_pairs
             )
             if not all_online:
@@ -38,29 +37,37 @@ class Estimator:
             try:
                 model_obj = pickle.loads(am["model"])
                 predictor = ModelPredictor(model_obj, pairs)
-                # predict() returns (predictions, predict_target, predict_features, predict_data)
                 predictions, _, _, _ = predictor.predict(today, today)
-                estimated_value = float(predictions[0])
-
-                with get_conn(self.db_path) as conn:
-                    conn.execute(
-                        """INSERT INTO estimates
-                        (outage_id, auto_model_id, triplet, parameter,
-                         date, estimated_value, generated_date)
-                        VALUES (?,?,?,?,?,?,?)""",
-                        (
-                            outage["id"], am["id"],
-                            outage["triplet"], outage["parameter"],
-                            today, estimated_value, today,
-                        ),
-                    )
-                logger.info(
-                    f"Estimated {outage['triplet']}/{outage['parameter']} "
-                    f"= {estimated_value:.3f} (model rank {am['rank']})"
-                )
-                return
             except Exception as e:
-                logger.warning(f"Estimation failed with model {am['id']}: {e}", exc_info=True)
+                logger.warning(f"Prediction failed with model {am['id']}: {e}", exc_info=True)
+                continue
+
+            if len(predictions) == 0:
+                logger.warning(
+                    f"No prediction data returned for {outage['triplet']}/{outage['parameter']} "
+                    f"using model {am['id']}"
+                )
+                continue
+
+            estimated_value = float(predictions[0])
+
+            with get_conn(self.db_path) as conn:
+                conn.execute(
+                    """INSERT INTO estimates
+                    (outage_id, auto_model_id, triplet, parameter,
+                     date, estimated_value, generated_date)
+                    VALUES (?,?,?,?,?,?,?)""",
+                    (
+                        outage["id"], am["id"],
+                        outage["triplet"], outage["parameter"],
+                        today, estimated_value, today,
+                    ),
+                )
+            logger.info(
+                f"Estimated {outage['triplet']}/{outage['parameter']} "
+                f"= {estimated_value:.3f} (model rank {am['rank']})"
+            )
+            return
 
         logger.warning(
             f"No viable model for outage {outage['id']} "

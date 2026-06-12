@@ -19,7 +19,6 @@ TRIPLET_B = "391:CA:SNTL"
 def _dummy_model():
     """A real scikit-learn model trained on trivial data for pickle testing."""
     from sklearn.linear_model import LinearRegression
-    import numpy as np
     m = LinearRegression()
     m.fit(np.array([[1.0], [2.0], [3.0]]), np.array([1.0, 2.0, 3.0]))
     return m
@@ -84,7 +83,7 @@ def test_estimate_stored_when_predictors_online(db_path):
     with get_conn(db_path) as conn:
         row = conn.execute("SELECT * FROM estimates").fetchone()
     assert row is not None
-    assert abs(row["estimated_value"] - 14.5) < 0.01
+    assert row["estimated_value"] == pytest.approx(14.5, abs=0.01)
     assert row["triplet"] == TRIPLET_A
     assert row["date"] == today
 
@@ -132,6 +131,38 @@ def test_no_estimate_when_all_predictors_offline(db_path):
     with patch("services.estimator.ModelPredictor.predict") as mock_predict:
         estimator.run(all_offline)
         mock_predict.assert_not_called()
+
+    with get_conn(db_path) as conn:
+        count = conn.execute("SELECT COUNT(*) FROM estimates").fetchone()[0]
+    assert count == 0
+
+
+def test_estimate_skipped_when_predictor_station_missing_from_status(db_path):
+    with get_conn(db_path) as conn:
+        outage_id = _insert_outage(conn)
+        _insert_auto_model(conn, outage_id, rank=1, triplet_b=TRIPLET_B)
+
+    estimator = Estimator(db_path)
+    # TRIPLET_B is not in online_status at all
+    status_missing_b = {TRIPLET_A: {"WTEQ": None, "PREC": None, "SNWD": None}}
+    with patch("services.estimator.ModelPredictor.predict") as mock_predict:
+        estimator.run(status_missing_b)
+        mock_predict.assert_not_called()
+
+    with get_conn(db_path) as conn:
+        count = conn.execute("SELECT COUNT(*) FROM estimates").fetchone()[0]
+    assert count == 0
+
+
+def test_estimate_skipped_when_predict_returns_empty(db_path):
+    with get_conn(db_path) as conn:
+        outage_id = _insert_outage(conn)
+        _insert_auto_model(conn, outage_id, rank=1)
+
+    estimator = Estimator(db_path)
+    with patch("services.estimator.ModelPredictor.predict") as mock_predict:
+        mock_predict.return_value = (np.array([]), None, None, None)
+        estimator.run(_online_all())
 
     with get_conn(db_path) as conn:
         count = conn.execute("SELECT COUNT(*) FROM estimates").fetchone()[0]
