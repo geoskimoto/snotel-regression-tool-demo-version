@@ -3,19 +3,16 @@ import os
 from pathlib import Path
 from datetime import datetime
 import dash
-from auth import basic_auth
 from flask_sqlalchemy import SQLAlchemy
+from streamflows_auth import protect_app
 import dash_bootstrap_components as dbc
 
 DB_DIR = os.path.dirname(os.path.realpath(__file__))
 APP_DIR = os.path.dirname(DB_DIR)
 APP_TITLE = "SNOTEL Regression Tool - Beta"
-USE_AUTH = os.getenv("USE_AUTH", False)
-AUTH_USER = os.getenv("AUTH_USER", "user")
-AUTH_PASSWORD = os.getenv("AUTH_PASSWORD", "snotel")
 
 
-def create_app(use_auth=USE_AUTH):
+def create_app():
     assets_path = Path(APP_DIR, "assets")
     app = dash.Dash(
         __name__,
@@ -25,9 +22,7 @@ def create_app(use_auth=USE_AUTH):
         assets_folder=assets_path,
     )
     app.title = APP_TITLE
-    if use_auth:
-        print(f"Using basic auth - env var USE_AUTH = {use_auth}")
-        basic_auth.BasicAuth(app, {AUTH_USER: AUTH_PASSWORD})
+    protect_app(app.server, "streamflow")
     meta_db_path = Path(DB_DIR, "meta.db")
     models_db_path = Path(DB_DIR, 'regr_models.db')
     meta_db_con_str = f"sqlite:///{meta_db_path.as_posix()}"
